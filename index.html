@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar — On-call that lets you sleep</title>
+<meta name="description" content="Lunar triages every alert, groups the duplicates, checks your runbook, and only wakes a human when something is genuinely on fire.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ======================= NAV ======================= -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#"><span class="mark"></span> Lunar</a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="signin" href="#">Sign in</a>
+      <a class="btn" href="#">Start free</a>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= HERO ======================= -->
+<section class="hero">
+  <canvas id="stars"></canvas>
+
+  <!-- noise filter the orb's texture layer references -->
+  <svg style="display:none" aria-hidden="true">
+    <defs>
+      <filter id="planet-noise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" result="noise"/>
+        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <svg class="dust" viewBox="0 0 600 400" preserveAspectRatio="none" aria-hidden="true">
+    <!-- top-left -->
+    <circle cx="28"  cy="22"  r="1.1" opacity=".5"/>
+    <circle cx="46"  cy="58"  r="0.7" opacity=".34"/>
+    <circle cx="14"  cy="74"  r="1.2" opacity=".42"/>
+    <circle cx="72"  cy="31"  r="0.6" opacity=".3"/>
+    <circle cx="95"  cy="66"  r="0.9" opacity=".26"/>
+    <circle cx="58"  cy="14"  r="0.8" opacity=".44"/>
+    <circle cx="120" cy="24"  r="0.6" opacity=".22"/>
+    <!-- top-right -->
+    <circle cx="566" cy="26"  r="1.1" opacity=".52"/>
+    <circle cx="540" cy="58"  r="0.8" opacity=".33"/>
+    <circle cx="582" cy="70"  r="0.7" opacity=".4"/>
+    <circle cx="512" cy="20"  r="0.6" opacity=".28"/>
+    <circle cx="556" cy="92"  r="0.9" opacity=".24"/>
+    <circle cx="486" cy="44"  r="0.6" opacity=".22"/>
+    <!-- sparse mid-field -->
+    <circle cx="36"  cy="180" r="0.8" opacity=".3"/>
+    <circle cx="18"  cy="268" r="0.7" opacity=".26"/>
+    <circle cx="574" cy="176" r="0.6" opacity=".28"/>
+    <circle cx="592" cy="236" r="0.7" opacity=".24"/>
+    <!-- clustered bottom-right, below the orb -->
+    <circle cx="548" cy="318" r="1.2" opacity=".5"/>
+    <circle cx="572" cy="340" r="0.8" opacity=".38"/>
+    <circle cx="530" cy="356" r="1"   opacity=".44"/>
+    <circle cx="588" cy="300" r="0.7" opacity=".3"/>
+    <circle cx="560" cy="372" r="1.1" opacity=".46"/>
+    <circle cx="516" cy="332" r="0.6" opacity=".26"/>
+    <circle cx="582" cy="364" r="0.9" opacity=".36"/>
+    <circle cx="542" cy="388" r="0.8" opacity=".32"/>
+    <circle cx="596" cy="330" r="0.6" opacity=".28"/>
+    <circle cx="508" cy="378" r="0.7" opacity=".24"/>
+    <!-- a couple bottom-left for balance -->
+    <circle cx="22"  cy="352" r="0.9" opacity=".3"/>
+    <circle cx="48"  cy="386" r="0.6" opacity=".22"/>
+  </svg>
+
+  <div class="planet-wrap" id="planetWrap" aria-hidden="true">
+    <div class="planet-rise">
+      <div class="planet">
+        <div class="planet-texture"></div>
+        <div class="planet-shadow"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="orbit" id="orbit" aria-hidden="true">
+    <div class="orbit-rise">
+    <svg viewBox="0 0 1000 1000">
+      <defs>
+        <!-- 150deg arc, r=530 (1.06x planet radius), concentric at (500,500) -->
+        <path id="arc" d="M -11.9 362.8 A 530 530 0 0 1 1011.9 362.8" fill="none"/>
+        <!-- hand-drawn wobble: displaces the glyph outlines with low-frequency
+             noise, giving uneven stroke weight the font itself doesn't have -->
+        <filter id="wobble" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0034" numOctaves="3" seed="5" result="t"/>
+          <feDisplacementMap in="SourceGraphic" in2="t" scale="17"
+                             xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+      <text text-anchor="middle" filter="url(#wobble)"><textPath href="#arc" startOffset="50%">LUNAR</textPath></text>
+    </svg>
+    </div>
+  </div>
+
+  <h1 class="visually-hidden">Lunar — on-call that lets you actually sleep</h1>
+
+  <div class="hero-body" id="heroBody">
+    <p class="headline rise d3">On-call that lets you <em>actually sleep</em>.</p>
+    <div class="cta-row rise d4">
+      <a class="btn btn-lg" href="#">Start for free</a>
+    </div>
+    <a class="scroll-cue" href="#how" aria-label="Scroll to how it works">
+      <span class="scroll-cue-track"><span class="scroll-cue-dot"></span></span>
+    </a>
+  </div>
+
+  <svg class="sparkle br" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <path d="M20 0C21.6 12.6 27.4 18.4 40 20 27.4 21.6 21.6 27.4 20 40 18.4 27.4 12.6 21.6 0 20 12.6 18.4 18.4 12.6 20 0Z" fill="currentColor"/>
+  </svg>
+</section>
+
+<!-- ======================= LOGOS ======================= -->
+<div class="logos-strip">
+  <div class="container">
+    <p class="logos-label reveal">Keeping the lights on for</p>
+    <div class="logos reveal" style="--i:1">
+      <span class="thin">Northwind</span>
+      <span>Calyx</span>
+      <span class="thin">Fermion</span>
+      <span>Hearth</span>
+      <span class="thin">Odeon</span>
+      <span>Kestrel</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= PROBLEM ======================= -->
+<section class="section">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">The 3am problem</p>
+      <h2 class="s-title">Most pages don't <em>need</em> a human.</h2>
+      <p class="s-sub">
+        We looked at 4.1 million alerts across 300 engineering teams. Nine out of ten
+        pages that wake someone up are noise, a duplicate, or something that fixes itself
+        before anyone finishes typing their password.
+      </p>
+    </div>
+
+    <div class="breakdown reveal" style="--i:1">
+      <div class="bar" role="img" aria-label="68 percent duplicates, 23 percent self-resolving, 9 percent need a human">
+        <div class="bar-seg seg-dupe"><b>68%</b></div>
+        <div class="bar-seg seg-self"><b>23%</b></div>
+        <div class="bar-seg seg-real"><b>9%</b></div>
+      </div>
+      <div class="bar-legend">
+        <div class="legend-item"><span class="legend-dot d1"></span><span><b>Duplicates.</b> The same incident, reported by four tools at once.</span></div>
+        <div class="legend-item"><span class="legend-dot d2"></span><span><b>Self-resolving.</b> Gone before a human could have opened the laptop.</span></div>
+        <div class="legend-item"><span class="legend-dot d3"></span><span><b>Genuinely on fire.</b> The only ones worth losing sleep over.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= HOW IT WORKS ======================= -->
+<section class="section section--alt" id="how">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 class="s-title">Three steps between an alert and your sleep.</h2>
+      <p class="s-sub">Lunar sits between your monitoring and your phone. Nothing else changes.</p>
+    </div>
+
+    <div class="steps">
+      <article class="step reveal" style="--i:1">
+        <div class="step-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 6h14M3 10h14M3 14h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <p class="step-n">01 / INGEST</p>
+        <h3>Everything lands in one stream</h3>
+        <p>Point Datadog, Sentry, CloudWatch, Grafana and your own webhooks at Lunar. Setup is a URL and a token, not a migration.</p>
+      </article>
+
+      <article class="step reveal" style="--i:2">
+        <div class="step-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.6" stroke="currentColor" stroke-width="1.7"/><path d="m13.4 13.4 3.4 3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <p class="step-n">02 / TRIAGE</p>
+        <h3>Lunar reads it against your runbook</h3>
+        <p>It collapses duplicates, correlates against the last deploy, checks dependent services, and matches the signature to a runbook you already wrote.</p>
+      </article>
+
+      <article class="step reveal" style="--i:3">
+        <div class="step-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 2.6 12.3 7l4.9.7-3.5 3.4.8 4.8L10 13.6l-4.5 2.3.8-4.8L2.8 7.7 7.7 7 10 2.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="step-n">03 / RESOLVE OR WAKE</p>
+        <h3>Most close themselves</h3>
+        <p>When a runbook applies, Lunar runs it and logs what it did. When it doesn't, it pages the right person with the full trail attached.</p>
+      </article>
+    </div>
+
+    <!-- incident timeline -->
+    <div class="console reveal" style="--i:2">
+      <div class="console-bar">
+        <span class="console-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="console-title">incident-4471 &middot; checkout-api &middot; 02:14 UTC</span>
+        <span class="console-pill"><svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true"><circle cx="4.5" cy="4.5" r="4.5" fill="currentColor"/></svg> No page sent</span>
+      </div>
+      <div class="console-body">
+        <div class="log" style="--r:0">
+          <time>02:14:07</time><span class="ic">⚡</span>
+          <p><b>47 alerts</b> received from <code>checkout-api</code> across Datadog, Sentry and CloudWatch.</p>
+        </div>
+        <div class="log" style="--r:1">
+          <time>02:14:09</time><span class="ic">🧩</span>
+          <p>Collapsed into <b>one incident</b>. Same root signature, three reporters.</p>
+        </div>
+        <div class="log" style="--r:2">
+          <time>02:14:10</time><span class="ic">🔍</span>
+          <p>Correlated with deploy <code>v2.41.0</code>, shipped 6 minutes earlier by @rhea.</p>
+        </div>
+        <div class="log" style="--r:3">
+          <time>02:14:11</time><span class="ic">📋</span>
+          <p>Matched runbook <code>db-connection-pool-exhausted</code> at <b>0.94 confidence</b>.</p>
+        </div>
+        <div class="log" style="--r:4">
+          <time>02:14:12</time><span class="ic">⚙️</span>
+          <p>Ran remediation: scaled connection pool <code>40 → 80</code>, drained two stuck workers.</p>
+        </div>
+        <div class="log win" style="--r:5">
+          <time>02:14:38</time><span class="ic">✓</span>
+          <p><b>Recovered in 31 seconds.</b> Summary posted to #incidents. Nobody was woken.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= FEATURES ======================= -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">Features</p>
+      <h2 class="s-title">Everything on-call should have been doing already.</h2>
+    </div>
+
+    <div class="grid-3">
+      <article class="feat wide reveal" style="--i:1">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M4 4h12v12H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 8h6M7 11h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h3>Runbook automation</h3>
+        <p>Write the fix once in plain English. Lunar recognises the signature next time and runs it, with every action logged for review.</p>
+        <div class="feat-snip" aria-hidden="true">
+          <span><b>when</b> connection pool saturated &gt; 60s</span>
+          <span><b>then</b> scale pool by 2x, drain stuck workers</span>
+          <span><b>unless</b> a deploy shipped in the last 5 min</span>
+          <span><em>&check; matched 41 times &middot; 0 escalations</em></span>
+        </div>
+      </article>
+
+      <article class="feat reveal" style="--i:2">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="7.5" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="12.5" cy="12.5" r="4" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3>Smart deduplication</h3>
+        <p>Four tools screaming about one outage becomes one incident with four sources attached, not four separate pages at four separate minutes.</p>
+      </article>
+
+      <article class="feat reveal" style="--i:3">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3 15V9m5 6V5m5 10v-4m4 4V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>Deploy correlation</h3>
+        <p>Every incident is checked against what shipped in the last hour, so the first question is answered before anyone asks it.</p>
+      </article>
+
+      <article class="feat reveal" style="--i:1">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 3v7l4 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3>Follow-the-sun rotas</h3>
+        <p>Schedules that respect time zones, holidays and the fact that people take leave. Handover notes are written for you.</p>
+      </article>
+
+      <article class="feat reveal" style="--i:2">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 2.6 3.4 5.4v4.3c0 4 2.8 7 6.6 7.9 3.8-.9 6.6-3.9 6.6-7.9V5.4L10 2.6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+        <h3>Escalation that gives up</h3>
+        <p>If the primary doesn't ack in 90 seconds it moves on. No silent pages, no incident sitting unowned until morning.</p>
+      </article>
+
+      <article class="feat full reveal" style="--i:3">
+        <div class="feat-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5 3h7l3 3v11H5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 11h4M8 8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h3>Postmortems, drafted</h3>
+        <p>Timeline, contributing factors and the actions taken, written up the moment an incident closes. You edit rather than start.</p>
+        <div class="feat-doc" aria-hidden="true">
+          <div class="doc-card">
+            <h4>Timeline</h4>
+            <div class="doc-line m a"></div><div class="doc-line"></div><div class="doc-line s"></div>
+          </div>
+          <div class="doc-card">
+            <h4>Contributing factors</h4>
+            <div class="doc-line"></div><div class="doc-line m a"></div><div class="doc-line s"></div>
+          </div>
+          <div class="doc-card">
+            <h4>Action items</h4>
+            <div class="doc-line s a"></div><div class="doc-line m"></div><div class="doc-line"></div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= STATS ======================= -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="stats reveal">
+      <div class="stat"><b>94%</b><span>of alerts resolved without waking anyone</span></div>
+      <div class="stat"><b>11s</b><span>median time to acknowledge</span></div>
+      <div class="stat"><b>4.2h</b><span>sleep returned per on-call week</span></div>
+      <div class="stat"><b>99.99%</b><span>ingest uptime, measured monthly</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= INTEGRATIONS ======================= -->
+<section class="section">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">Integrations</p>
+      <h2 class="s-title">It speaks to what you already run.</h2>
+      <p class="s-sub">Forty-plus native integrations, plus a generic webhook for the thing your team built in 2019 and never documented.</p>
+    </div>
+    <div class="orbit-map reveal">
+      <div class="orbit-ring r1 spin" aria-hidden="true"></div>
+      <div class="orbit-ring r2 spin" aria-hidden="true"></div>
+      <div class="orbit-core">Lunar</div>
+
+      <!-- inner ring: alert sources, every 60deg -->
+      <div class="intg" style="--a:0deg;--r:132px"><i></i> Datadog</div>
+      <div class="intg" style="--a:60deg;--r:132px"><i></i> Sentry</div>
+      <div class="intg" style="--a:120deg;--r:132px"><i></i> Grafana</div>
+      <div class="intg" style="--a:180deg;--r:132px"><i></i> CloudWatch</div>
+      <div class="intg" style="--a:240deg;--r:132px"><i></i> Prometheus</div>
+      <div class="intg" style="--a:300deg;--r:132px"><i></i> New Relic</div>
+
+      <!-- outer ring: where it routes to, offset 30deg so the two interleave
+           instead of lining up radially and colliding -->
+      <div class="intg" style="--a:30deg;--r:232px"><i></i> Slack</div>
+      <div class="intg" style="--a:90deg;--r:232px"><i></i> Teams</div>
+      <div class="intg" style="--a:150deg;--r:232px"><i></i> GitHub</div>
+      <div class="intg" style="--a:210deg;--r:232px"><i></i> Linear</div>
+      <div class="intg" style="--a:270deg;--r:232px"><i></i> Kubernetes</div>
+      <div class="intg" style="--a:330deg;--r:232px"><i></i> Webhooks</div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= QUOTE ======================= -->
+<section class="section section--alt">
+  <div class="container">
+    <div class="quote reveal">
+      <blockquote>
+        &ldquo;We went from eleven pages a week to one. The thing I didn't expect is that
+        <em>people stopped dreading the rotation</em>. Two engineers told me they'd have
+        left over it.&rdquo;
+      </blockquote>
+      <div class="quote-by">
+        <span class="avatar" aria-hidden="true"></span>
+        <div>
+          <strong>Priya Raman</strong>
+          <span>VP Engineering, Kestrel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= PRICING ======================= -->
+<section class="section" id="pricing">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">Pricing</p>
+      <h2 class="s-title">Priced per responder, not per alert.</h2>
+      <p class="s-sub">Charging for alert volume punishes you for having a bad night. We don't do that.</p>
+    </div>
+
+    <div class="plans">
+      <article class="plan reveal" style="--i:1">
+        <h3>Free</h3>
+        <div class="price"><b>$0</b><span>forever</span></div>
+        <p class="blurb">For small teams and side projects that still deserve a night off.</p>
+        <a class="btn btn-ghost" href="#">Start free</a>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Up to 5 responders</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> 1,000 alerts per month</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Deduplication and correlation</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Slack and email delivery</li>
+        </ul>
+      </article>
+
+      <article class="plan feature reveal" style="--i:2">
+        <span class="plan-tag">Most teams</span>
+        <h3>Team</h3>
+        <div class="price"><b>$18</b><span>/ responder / month</span></div>
+        <p class="blurb">Everything that makes the 3am page stop happening.</p>
+        <a class="btn" href="#">Start 14-day trial</a>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Unlimited responders and alerts</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Runbook automation</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Deploy correlation and rotas</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Drafted postmortems</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> 99.99% uptime SLA</li>
+        </ul>
+      </article>
+
+      <article class="plan reveal" style="--i:3">
+        <h3>Enterprise</h3>
+        <div class="price"><b>Custom</b></div>
+        <p class="blurb">For estates with compliance officers and a lot of services.</p>
+        <a class="btn btn-ghost" href="#">Talk to us</a>
+        <ul>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> SSO, SCIM and audit logs</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Self-hosted ingest option</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Private runbook models</li>
+          <li><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="m2.5 7.5 3 3 6-7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg> Named support engineer</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ======================= FAQ ======================= -->
+<section class="section section--alt" id="faq">
+  <div class="container">
+    <div class="s-head center reveal">
+      <p class="eyebrow">Questions</p>
+      <h2 class="s-title">The ones everyone asks.</h2>
+    </div>
+
+    <div class="faq reveal" style="--i:1">
+      <details open>
+        <summary>What happens if Lunar gets it wrong and suppresses something real?</summary>
+        <p>Nothing is suppressed silently. Every decision is written to the incident log with the confidence score and the runbook that matched. You set the confidence floor for auto-resolution, and anything below it pages a human by default. Most teams start at 0.95 and relax it once they have seen a month of decisions.</p>
+      </details>
+      <details>
+        <summary>Do we have to replace PagerDuty or Opsgenie?</summary>
+        <p>No. Plenty of teams run Lunar in front of an existing paging tool for the first few months, so Lunar does the triage and hands the survivors over. When you trust it, you can let Lunar do the paging too and switch the old tool off.</p>
+      </details>
+      <details>
+        <summary>How long does setup actually take?</summary>
+        <p>The ingest side is a URL and a token per source, so under ten minutes. Runbook automation is worth more time: teams usually import three or four existing runbooks in the first week, then add one each time an incident repeats.</p>
+      </details>
+      <details>
+        <summary>Can it run remediations against production?</summary>
+        <p>Only the ones you explicitly grant. Actions are scoped with your own IAM roles, every run is logged and reversible, and you can set any runbook to propose-only so it writes out what it would do and waits for a human to approve.</p>
+      </details>
+      <details>
+        <summary>What does it do with our alert data?</summary>
+        <p>Alert content stays in your region and is never used to train shared models. Enterprise plans can keep ingest entirely inside your own VPC. Lunar is SOC 2 Type II and the report is available under NDA.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FINAL CTA ======================= -->
+<section class="final">
+  <canvas id="stars2"></canvas>
+  <div class="final-moon" aria-hidden="true"></div>
+  <div class="container">
+    <div class="night reveal">
+      <div class="night-top">
+        <span>Last night &middot; 22:00 to 07:00</span>
+        <b><span class="dot"></span> 1 page sent</b>
+      </div>
+      <div class="night-hours" aria-hidden="true">
+        <div class="hour" style="--h:0"><div class="hour-bar" style="height:18px"></div><span>22</span></div>
+        <div class="hour" style="--h:1"><div class="hour-bar" style="height:13px"></div><span>23</span></div>
+        <div class="hour" style="--h:2"><div class="hour-bar" style="height:26px"></div><span>00</span></div>
+        <div class="hour" style="--h:3"><div class="hour-bar" style="height:15px"></div><span>01</span></div>
+        <div class="hour woke" style="--h:4"><div class="hour-bar" style="height:48px"></div><span>02</span></div>
+        <div class="hour" style="--h:5"><div class="hour-bar" style="height:21px"></div><span>03</span></div>
+        <div class="hour" style="--h:6"><div class="hour-bar" style="height:11px"></div><span>04</span></div>
+        <div class="hour" style="--h:7"><div class="hour-bar" style="height:17px"></div><span>05</span></div>
+        <div class="hour" style="--h:8"><div class="hour-bar" style="height:9px"></div><span>06</span></div>
+      </div>
+      <div class="night-key">
+        <span><i class="auto"></i>218 alerts resolved by Lunar</span>
+        <span><i class="woke"></i>1 genuinely on fire, at 02:14</span>
+      </div>
+    </div>
+
+    <div class="reveal" style="--i:1">
+      <h2 class="s-title">Get your nights back.</h2>
+      <div class="cta-row">
+        <a class="btn btn-lg" href="#">Start for free</a>
+        <a class="btn btn-lg btn-ghost" href="#">Book a walkthrough</a>
+      </div>
+      <p class="note">Free for 5 responders &middot; No card required &middot; Live in under 10 minutes</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="footer">
+  <div class="container">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#"><span class="mark"></span> Lunar</a>
+        <p>Incident response that treats waking a human as the last resort, not the first.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Developers</h4>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">API reference</a></li>
+          <li><a href="#">Integrations</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">DPA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>&copy; 2026 Lunar. A fictional brand, built as a design demo. Company names and figures are illustrative.</span>
+      <span><a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="#">Status</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>
